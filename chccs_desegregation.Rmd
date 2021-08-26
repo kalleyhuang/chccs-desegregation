@@ -17,6 +17,8 @@ chccs_aig <- read.csv("chccs_aig_lea.csv")
 school_aig <- read.csv("chccs_aig_school.csv")
 ap <- read.csv("chccs_ap.csv")
 graduation <- read.csv("chccs_graduation.csv")
+enrollment <- read.csv("chccs_enrollment.csv")
+chccs_suspensions <- read.csv("chccs_suspensions_lea.csv")
 ```
 
 ```{r demographics}
@@ -50,7 +52,7 @@ school_demographics %>%
 ```
 
 ```{r aig}
-# calculate percentage differences between composition of schools & AIG students
+# calculate percentage differences between composition of district & AIG students
 chccs_aig_num <- 3443
 chccs_demographics %>% 
   filter(year == 2020) %>% 
@@ -65,7 +67,7 @@ chccs_demographics %>%
             hispanic_diff = aig_hispanic - pct_hispanic, asian_diff = aig_asian - pct_asian,
             multi_diff = aig_multi - pct_multi)
 
-# calculate likelihood to be identified as AIG
+# calculate likelihood to be identified as AIG for district
 chccs_aig %>% 
   pivot_wider(!pct, names_from = subgroup, values_from = num) %>% 
   summarize(aig_white = white_female + white_male, aig_black = black_female + black_male, 
@@ -81,7 +83,7 @@ chccs_aig %>%
   summarize(black_dis = pct_white / pct_black, hispanic_dis = pct_white / pct_hispanic, 
             asian_dis = pct_white / pct_asian)
 
-# identify disparities for each school
+# calculate percentage differences between composition of school & AIG students
 school_aig %>% 
   rename(aig_white = pct_white, aig_black = pct_black, aig_hispanic = pct_hispanic, aig_asian = pct_asian, 
          aig_pi = pct_pi, aig_aian = pct_aian, aig_multi = pct_multi) %>% 
@@ -94,7 +96,7 @@ school_aig %>%
 ```
 
 ```{r ap}
-# calculate percentage differences between composition of school & AP classes
+# calculate percentage differences between composition of school & AP classes for each school
 school_demographics %>% 
   filter(year == 2020, school %in% ap$school) %>% 
   cbind(., ap %>% 
@@ -105,7 +107,7 @@ school_demographics %>%
             hispanic_diff = ap_hispanic - pct_hispanic, asian_diff = ap_asian - pct_asian, pi_diff = ap_pi - pct_pi,
             aian_diff = ap_aian - pct_aian, multi_diff = ap_multi - pct_multi)
 
-# calculate likelihood to be in at least one AP class
+# calculate likelihood to be in at least one AP class for each school
 chs_ap_num <- 402 # Carrboro High School
 chhs_ap_num <- 699 # Chapel Hill High School
 echhs_ap_num <- 706 # East Chapel Hill High School
@@ -154,4 +156,44 @@ graduation %>%
   summarize(school, white_rate = white_grad / white_cohort * 100, black_rate = black_grad / black_cohort * 100,
             hispanic_rate = hispanic_grad / hispanic_cohort * 100, asian_rate = asian_grad / asian_cohort * 100,
             multi_rate = multi_grad / multi_cohort * 100)
+
+# calculate likelihood to enroll in college for each school
+enrollment %>% 
+  summarize(school, black_dis = white_rate / black_rate, hispanic_dis = white_rate / hispanic_rate,
+            asian_dis = white_rate / asian_rate)
+```
+
+```{r discipline}
+# calculate percentage differences between composition of district & students experiencing short-term suspensions
+chccs_suspensions_num <- 255
+chccs_demographics %>% 
+  filter(year == 2020) %>% 
+  cbind(., chccs_suspensions %>% 
+          filter(year == 2020) %>% 
+          pivot_wider(!pct, names_from = subgroup, values_from = num) %>% 
+          summarize(sus_white = (white_female + white_male) / chccs_suspensions_num * 100, 
+                    sus_black = (black_female + black_male) / chccs_suspensions_num * 100,
+                    sus_hispanic = (his_female + his_male) / chccs_suspensions_num * 100, 
+                    sus_asian = (asian_female + asian_male) / chccs_suspensions_num * 100,
+                    sus_multi = (multi_female + multi_male) / chccs_suspensions_num * 100)) %>% 
+  summarize(white_diff = sus_white - pct_white, black_diff = sus_black - pct_black, 
+            hispanic_diff = sus_hispanic - pct_hispanic, asian_diff = sus_asian - pct_asian,
+            multi_diff = sus_multi - pct_multi)
+
+# calculate likelihood to experience short-term suspension for district
+chccs_suspensions %>% 
+  filter(year == 2020) %>% 
+  pivot_wider(!pct, names_from = subgroup, values_from = num) %>% 
+  summarize(sus_white = white_female + white_male, sus_black = black_female + black_male, 
+            sus_hispanic = his_female + his_male, sus_asian = asian_female + asian_male, 
+            sus_multi = multi_female + multi_male) %>% 
+  cbind(., demographics %>% 
+          filter(year == 2020) %>% 
+          summarize(white = sum(white_male + white_female), black = sum(black_male + black_female), 
+                    hispanic = sum(his_male + his_female), asian = sum(asian_male + asian_female), 
+                    multi = sum(multi_male + multi_female))) %>% 
+  summarize(pct_white = sus_white / white, pct_black = sus_black / black, pct_hispanic = sus_hispanic / hispanic,
+            pct_asian = sus_asian / asian, pct_pi = pi, pct_multi = sus_multi / multi) %>% 
+  summarize(black_dis = pct_black / pct_white, hispanic_dis = pct_hispanic / pct_white, 
+            asian_dis = pct_asian / pct_white)
 ```
