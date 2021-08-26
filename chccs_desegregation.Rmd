@@ -165,17 +165,15 @@ enrollment %>%
 
 ```{r discipline}
 # calculate percentage differences between composition of district & students experiencing short-term suspensions
-chccs_suspensions_num <- 255
 chccs_demographics %>% 
   filter(year == 2020) %>% 
   cbind(., chccs_suspensions %>% 
           filter(year == 2020) %>% 
-          pivot_wider(!pct, names_from = subgroup, values_from = num) %>% 
-          summarize(sus_white = (white_female + white_male) / chccs_suspensions_num * 100, 
-                    sus_black = (black_female + black_male) / chccs_suspensions_num * 100,
-                    sus_hispanic = (his_female + his_male) / chccs_suspensions_num * 100, 
-                    sus_asian = (asian_female + asian_male) / chccs_suspensions_num * 100,
-                    sus_multi = (multi_female + multi_male) / chccs_suspensions_num * 100)) %>% 
+          summarize(sus_white = (white_female + white_male) / total * 100, 
+                    sus_black = (black_female + black_male) / total * 100,
+                    sus_hispanic = (his_female + his_male) / total * 100, 
+                    sus_asian = (asian_female + asian_male) / total * 100,
+                    sus_multi = (multi_female + multi_male) / total * 100)) %>% 
   summarize(white_diff = sus_white - pct_white, black_diff = sus_black - pct_black, 
             hispanic_diff = sus_hispanic - pct_hispanic, asian_diff = sus_asian - pct_asian,
             multi_diff = sus_multi - pct_multi)
@@ -183,7 +181,6 @@ chccs_demographics %>%
 # calculate likelihood to experience short-term suspension for district
 chccs_suspensions %>% 
   filter(year == 2020) %>% 
-  pivot_wider(!pct, names_from = subgroup, values_from = num) %>% 
   summarize(sus_white = white_female + white_male, sus_black = black_female + black_male, 
             sus_hispanic = his_female + his_male, sus_asian = asian_female + asian_male, 
             sus_multi = multi_female + multi_male) %>% 
@@ -196,4 +193,10 @@ chccs_suspensions %>%
             pct_asian = sus_asian / asian, pct_pi = pi, pct_multi = sus_multi / multi) %>% 
   summarize(black_dis = pct_black / pct_white, hispanic_dis = pct_hispanic / pct_white, 
             asian_dis = pct_asian / pct_white)
+
+# over time
+# data obscured for white_female in 2017 and 2014
+chccs_suspensions %>% 
+  summarize(year = year, white = white_female + white_male, black = black_female + black_male, total) %>% 
+  mutate(pct_white = white / total * 100, pct_black = black / total * 100)
 ```
