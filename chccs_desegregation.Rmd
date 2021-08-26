@@ -19,6 +19,7 @@ ap <- read.csv("chccs_ap.csv")
 graduation <- read.csv("chccs_graduation.csv")
 enrollment <- read.csv("chccs_enrollment.csv")
 chccs_suspensions <- read.csv("chccs_suspensions_lea.csv")
+school_suspensions <- read.csv("chccs_suspensions_school.csv")
 ```
 
 ```{r demographics}
@@ -45,10 +46,6 @@ school_demographics <- demographics %>%
          pct_asian = asian / total * 100, pct_pi = pi / total * 100, pct_aian = aian / total * 100,
          pct_multi = multi / total * 100) %>% 
   select(year, school, pct_white, pct_black, pct_hispanic, pct_asian, pct_pi, pct_aian, pct_multi)
-
-school_demographics %>% 
-  filter(year == 2020) %>% 
-  arrange(pct_white)
 ```
 
 ```{r aig}
@@ -193,6 +190,27 @@ chccs_suspensions %>%
             pct_asian = sus_asian / asian, pct_pi = pi, pct_multi = sus_multi / multi) %>% 
   summarize(black_dis = pct_black / pct_white, hispanic_dis = pct_hispanic / pct_white, 
             asian_dis = pct_asian / pct_white)
+
+# calculate likelihood to experience short-term suspension for each school
+school_suspensions %>% 
+  filter(!is.na(white_rate), white_rate > 0) %>% 
+  summarize(school, black_dis = black_rate / white_rate) %>% 
+  arrange(desc(black_dis))
+
+# WHAT DOES STUDENT MEMBERSHIP MEAN??? THE ENTIRE STUDENT BODY??? THE NUMBER OF STUDENTS OF A GIVEN RACE???
+# Rates per 1000 are calculated by dividing the total number of crimes or suspensions/expulsions by student membership at the State, District, or School level, and then multiplying by 1000. This statistic allows for general comparison of one entity to another by controlling for differences in student population size.
+school_suspensions %>% 
+  cbind(., demographics %>% 
+          filter(year == 2020, school != "UNC Hospital School") %>% 
+          select(total)) %>% 
+  summarize(school, sus_white = round(white_rate / 1000 * total), sus_black = round(black_rate / 1000 * total),
+            sus_hispanic = round(hispanic_rate / 1000 * total), sus_asian = round(asian_rate / 1000 * total),
+            sus_multi = round(multi_rate / 1000)) %>% 
+  cbind(., demographics %>% 
+          filter(year == 2020, school != "UNC Hospital School") %>% 
+          summarize(white = white_male + white_female, black = black_male + black_female, 
+                    hispanic = his_male + his_female, asian = asian_male + asian_female, 
+                    multi = multi_male + multi_female))
 
 # over time
 # data obscured for white_female in 2017 and 2014
