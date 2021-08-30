@@ -87,6 +87,11 @@ school_aig %>%
   cbind(., school_demographics %>% 
           filter(year == 2018, school != "UNC Hospital School") %>% 
           select(-year, -school)) %>% 
+  #summarize(school, pct_black, aig_black) %>% 
+  #filter(school %in% c("Carrboro Elementary", "Ephesus Elementary", "Estes Hills Elementary", "FPG Elementary",
+  #                     "Glenwood Elementary", "McDougle Elementary", "Morris Grove Elementary", "Northside Elementary",
+  #                     "Rashkis Elementary", "Scroggs Elementary", "Seawell Elementary"))
+  #filter(school %in% c("Culbreth Middle", "McDougle Middle", "Phillips Middle", "Smith Middle"))
   summarize(school, white_diff = aig_white - pct_white, black_diff = aig_black - pct_black, 
             hispanic_diff = aig_hispanic - pct_hispanic, asian_diff = aig_asian - pct_asian,
             multi_diff = aig_multi - pct_multi)
@@ -141,6 +146,7 @@ demographics %>%
           select(-school) %>% 
           rename(ap_white = white, ap_black = black, ap_hispanic = hispanic, ap_asian = asian, ap_pi = pi, 
                  ap_aian = aian, ap_multi = multi, ap_total = total)) %>% 
+  #summarize(school, pct_black = black / total * 100, pct_black_ap = ap_black / ap_total * 100)
   summarize(school, pct_white = ap_white / white, pct_black = ap_black / black, pct_hispanic = ap_hispanic / hispanic,
             pct_asian = ap_asian / asian, pct_pi = pi, pct_aian = ap_aian / aian, pct_multi = ap_multi / multi) %>% 
   summarize(school, black_dis = pct_white / pct_black, hispanic_dis = pct_white / pct_hispanic, 
@@ -194,23 +200,23 @@ chccs_suspensions %>%
 # calculate likelihood to experience short-term suspension for each school
 school_suspensions %>% 
   filter(!is.na(white_rate), white_rate > 0) %>% 
-  summarize(school, black_dis = black_rate / white_rate) %>% 
+  summarize(school, white_rate, black_rate, black_dis = black_rate / white_rate) %>% 
   arrange(desc(black_dis))
 
 # WHAT DOES STUDENT MEMBERSHIP MEAN??? THE ENTIRE STUDENT BODY??? THE NUMBER OF STUDENTS OF A GIVEN RACE???
 # Rates per 1000 are calculated by dividing the total number of crimes or suspensions/expulsions by student membership at the State, District, or School level, and then multiplying by 1000. This statistic allows for general comparison of one entity to another by controlling for differences in student population size.
-school_suspensions %>% 
-  cbind(., demographics %>% 
-          filter(year == 2020, school != "UNC Hospital School") %>% 
-          select(total)) %>% 
-  summarize(school, sus_white = round(white_rate / 1000 * total), sus_black = round(black_rate / 1000 * total),
-            sus_hispanic = round(hispanic_rate / 1000 * total), sus_asian = round(asian_rate / 1000 * total),
-            sus_multi = round(multi_rate / 1000)) %>% 
-  cbind(., demographics %>% 
-          filter(year == 2020, school != "UNC Hospital School") %>% 
-          summarize(white = white_male + white_female, black = black_male + black_female, 
-                    hispanic = his_male + his_female, asian = asian_male + asian_female, 
-                    multi = multi_male + multi_female))
+# school_suspensions %>%
+#   cbind(., demographics %>%
+#           filter(year == 2020, school != "UNC Hospital School") %>%
+#           select(total)) %>%
+#   summarize(school, sus_white = round(white_rate / 1000 * total), sus_black = round(black_rate / 1000 * total),
+#             sus_hispanic = round(hispanic_rate / 1000 * total), sus_asian = round(asian_rate / 1000 * total),
+#             sus_multi = round(multi_rate / 1000)) %>%
+#   cbind(., demographics %>%
+#           filter(year == 2020, school != "UNC Hospital School") %>%
+#           summarize(white = white_male + white_female, black = black_male + black_female,
+#                     hispanic = his_male + his_female, asian = asian_male + asian_female,
+#                     multi = multi_male + multi_female))
 
 # over time
 # data obscured for white_female in 2017 and 2014
